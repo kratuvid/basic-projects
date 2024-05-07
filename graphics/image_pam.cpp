@@ -100,7 +100,7 @@ void image_pam::parse(const std::string_view& filename)
 	auto last = ifs.tellg();
 	ifs.seekg(cur);
 
-	diffassert_msg(expected_size == (last-cur), fmt::format("Expected PAM file {} of size {} bytes, has {} bytes", filename, expected_size, last-cur));
+	diffassert_msg(expected_size == size_t(last-cur), fmt::format("Expected PAM file {} of size {} bytes, has {} bytes", filename, expected_size, last-cur));
 
 	const size_t actual_stride = hdr.width * 4;
 	size = actual_stride * hdr.height;

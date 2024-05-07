@@ -5,6 +5,7 @@
 #include <random>
 #include <exception>
 #include <algorithm>
+#include <array>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -133,12 +134,12 @@ private: /* private member functions */
 	{
 		int retries = 100;
 
-		std::string random_filename("/" __FILE__ "-XXXXXX");
+		std::string random_filename("/slideshow-XXXXXX");
 		std::random_device rd;
 		
 		do
 		{
-			for (int i = random_filename.length() - 6; i < random_filename.length(); i++)
+			for (std::string::size_type i = random_filename.length() - 6; i < random_filename.length(); i++)
 				random_filename[i] = static_cast<char>( (rd() % 26) + 'A' );
 
 			int fd = shm_open(random_filename.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
@@ -191,7 +192,7 @@ private: /* private member functions */
 		{
 			if (shm_pool)
 				wl_shm_pool_destroy(shm_pool);
-			if (shm_mmap != MAP_FAILED && shm_mmap != nullptr)
+			if (shm_mmap != MAP_FAILED || shm_mmap != nullptr)
 				munmap(shm_mmap, shm_size);
 			if (fd)
 				close(fd);
@@ -248,11 +249,11 @@ private: /* private member functions */
 	}
 
 private:
-	image_pam images[10];
+	std::array<image_pam, 10> images;
 
 	void init_rest()
 	{
-		for (int i=0; i < 10; i++)
+		for (std::array<image_pam, 10>::size_type i=0; i < images.size(); i++)
 			images[i].parse(fmt::format("slideshow_images/{}.pam", std::to_string(i+1)));
 	}
 	
@@ -267,7 +268,7 @@ public:
 	
 	~App()
 	{
-		if (shm_mmap != MAP_FAILED && shm_mmap != nullptr)
+		if (shm_mmap != MAP_FAILED || shm_mmap != nullptr)
 			munmap(shm_mmap, shm_size);
 		if (w_buffer)
 			wl_buffer_destroy(w_buffer);
@@ -307,7 +308,7 @@ public:
 			accum = 0;
 			index++;
 		}
-		index = index % 10;
+		index = index % images.size();
 		
 		memset(shm_mmap, 0, shm_size);
 
