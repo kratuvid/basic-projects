@@ -194,7 +194,7 @@ private: /* private member functions */
 				wl_shm_pool_destroy(shm_pool);
 			if (shm_mmap != MAP_FAILED || shm_mmap != nullptr)
 				munmap(shm_mmap, shm_size);
-			if (fd)
+			if (fd && fd != -1)
 				close(fd);
 			throw;
 		}
@@ -303,7 +303,8 @@ public:
 		static int index = 0;
 		static auto accum = 0;
 		accum += deltams;
-		if (accum > 750)
+		float opacity = accum / 2000.f;
+		if (accum > 2000)
 		{
 			accum = 0;
 			index++;
@@ -320,11 +321,17 @@ public:
 		{
 			const size_t pixel_location = i * pixel_stride;
 			const size_t image_location = i * image_stride;
-			memcpy(pixels + pixel_location, images[index].data.get() + image_location, std::min(pixel_stride, image_stride));
+		  
+			// memcpy(pixels + pixel_location, images[index].data.get() + image_location, std::min(pixel_stride, image_stride));
+
+			for (size_t j=0; j < std::min(pixel_stride, image_stride); j++)
+			{
+				pixels[pixel_location + j] = images[index].data.get()[(image_location + j + timems) % images[index].size];
+			}
 		}
 
 		wl_surface_attach(w_surface, w_buffer, 0, 0);
-		wl_surface_damage_buffer(w_surface, 0, 0, std::min((uint16_t)width, images[index].hdr.width), std::min((uint16_t)height, images[index].hdr.height));
+		wl_surface_damage_buffer(w_surface, 0, 0, width, height);
 	}
 
 	void run()
